@@ -39,7 +39,7 @@
 
     Dict object của python, chứa toàn bộ dữ liệu test. Cấu trúc giống file  train.pkl ngoại trừ việc không có label
     
-- File dict_map.pkl
+- File [dict_map.pkl](https://drive.google.com/file/d/1RnZO8Yyt6NqNA15QDU3mfGk-ywn1-4HI/view?usp=sharing)
     
     Dict object của python, chứa mapping word với vector tương ứng với từng loại word embeding. Cấu trúc dict như sau:
     
