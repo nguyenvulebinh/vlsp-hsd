@@ -15,7 +15,7 @@ import torch.nn.functional as F
 MODEL_PATH = "./model-bin/"
 N_EPOCHS = 20
 BATCH_SIZE = 128
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def train_epoch(model, iterator, optimizer, criterion, device, file_log=None):
@@ -172,11 +172,12 @@ def do_train_model(type_embed, model_instance, model_name):
 
 
 if __name__ == "__main__":
-    list_embeds = ['comment', 'fasttext', 'sonvx_wiki', 'sonvx_baomoi_5', 'sonvx_baomoi_2']
+    # list_embeds = ['comment', 'fasttext', 'sonvx_wiki', 'sonvx_baomoi_5', 'sonvx_baomoi_2']
+    list_embeds = ['roberta']
     for embed_item in list_embeds:
         list_models = [
+            (cnn_model.get_model(embed_item)),
             (rnn_model.get_model(embed_item)),
-            (cnn_model.get_model(embed_item))
         ]
         for model_item in list_models:
             do_train_model(embed_item, *model_item)

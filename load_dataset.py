@@ -2,9 +2,11 @@ import pickle
 import random
 import numpy as np
 
-train_data = pickle.load(open('./data-bin/train.pkl', 'rb'))
-test_data = pickle.load(open('./data-bin/test.pkl', 'rb'))
-w2v_dict = pickle.load(open('./data-bin/dict_map.pkl', 'rb'))
+train_data = pickle.load(open('./data-bin/train_v1.pkl', 'rb'))
+test_data = pickle.load(open('./data-bin/test_v1.pkl', 'rb'))
+w2v_dict = pickle.load(open('./data-bin/dict_map_v1.pkl', 'rb'))
+train_sample2vec_roberta = pickle.load(open('./data-bin/train_sample2vec.pkl', 'rb'))
+test_sample2vec_roberta = pickle.load(open('./data-bin/test_sample2vec.pkl', 'rb'))
 
 
 def get_valid_data_ids(valid_ratio=0.1, shuffer=False):
@@ -18,7 +20,19 @@ def get_valid_data_ids(valid_ratio=0.1, shuffer=False):
 valid_data_ids = get_valid_data_ids(shuffer=False)
 
 
-def get_sample_representation(sample_words, present_type, size):
+def get_sample_representation(sample_id, sample_words, present_type, size):
+    if present_type == 'roberta':
+        embed_vector = None
+        if sample_id.startswith("train_"):
+            embed_vector = train_sample2vec_roberta[sample_id]
+        elif sample_id.startswith("test_"):
+            embed_vector = test_sample2vec_roberta[sample_id]
+        if embed_vector.shape[0] < size:
+            embed_vector = np.concatenate([embed_vector, np.zeros((size - embed_vector.shape[0], 512))], axis=0)
+        else:
+            embed_vector = embed_vector[:size]
+        return embed_vector
+
     list_embed = []
     for word in sample_words:
         embed = w2v_dict[present_type][word]
@@ -44,7 +58,8 @@ def generate_batches_test(batch_size, embed_type, max_size=250):
         if test_data[sample_id]['representation'][embed_type]['vec'] is not None:
             break
         test_data[sample_id]['representation'][embed_type]['vec'] = \
-            get_sample_representation(test_data[sample_id]['representation'][embed_type]['words'],
+            get_sample_representation(sample_id,
+                                      test_data[sample_id]['representation'][embed_type]['words'],
                                       embed_type,
                                       max_size)
     print("Total: {} samples".format(len(ids)))
@@ -69,7 +84,8 @@ def generate_batches_train_for_combine(batch_size, embed_type, max_size=250):
         if train_data[sample_id]['representation'][embed_type]['vec'] is not None:
             break
         train_data[sample_id]['representation'][embed_type]['vec'] = \
-            get_sample_representation(train_data[sample_id]['representation'][embed_type]['words'],
+            get_sample_representation(sample_id,
+                                      train_data[sample_id]['representation'][embed_type]['words'],
                                       embed_type,
                                       max_size)
     print("Total: {} samples".format(len(ids)))
@@ -108,7 +124,8 @@ def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250, 
         if train_data[sample_id]['representation'][embed_type]['vec'] is not None:
             break
         train_data[sample_id]['representation'][embed_type]['vec'] = \
-            get_sample_representation(train_data[sample_id]['representation'][embed_type]['words'],
+            get_sample_representation(sample_id,
+                                      train_data[sample_id]['representation'][embed_type]['words'],
                                       embed_type,
                                       max_size)
     print("Total: {} samples".format(len(ids)))
@@ -122,8 +139,8 @@ def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250, 
 
 if __name__ == "__main__":
     print(valid_data_ids)
-    epoch_iterator = generate_batches_train(20, 'comment')
-    epoch_iterator_test = generate_batches_test(20, 'sonvx_wiki')
+    epoch_iterator = generate_batches_train(20, 'roberta')
+    epoch_iterator_test = generate_batches_test(20, 'roberta')
     for batch_inputs, batch_ouputs in epoch_iterator:
         print(batch_inputs.shape, batch_ouputs)
     for batch_inputs in epoch_iterator_test:

@@ -7,7 +7,7 @@ def get_model(embed_type):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     EMBEDDING_DIM = utils.get_embedding_dim(embed_type)
-    N_FILTERS = 512
+    N_FILTERS = 1024
     FILTER_SIZES = [3, 4, 5, 6]
     OUTPUT_DIM = 3
     DROPOUT = 0.5

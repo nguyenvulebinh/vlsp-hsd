@@ -52,7 +52,9 @@ def get_embedding_dim(embed_type):
         'fasttext': 300,
         'sonvx_wiki': 400,
         'sonvx_baomoi_5': 400,
-        'sonvx_baomoi_2': 300
+        'sonvx_baomoi_2': 300,
+        'roberta': 512,
+
     }[embed_type]
 
 
