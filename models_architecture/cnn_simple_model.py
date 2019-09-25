@@ -34,7 +34,6 @@ class CNN1d(nn.Module):
 
         cat = self.dropout(torch.cat(pooled, dim=1))
 
-        # cat = [batch size, n_filters * len(filter_sizes)]
         if softmax:
             return F.softmax(self.fc(cat), dim=1)
         return self.fc(cat)

@@ -41,6 +41,8 @@ def generate_batches_test(batch_size, embed_type, max_size=250):
 
     print("Load test embedding....")
     for sample_id in ids:
+        if test_data[sample_id]['representation'][embed_type]['vec'] is not None:
+            break
         test_data[sample_id]['representation'][embed_type]['vec'] = \
             get_sample_representation(test_data[sample_id]['representation'][embed_type]['words'],
                                       embed_type,
@@ -51,6 +53,32 @@ def generate_batches_test(batch_size, embed_type, max_size=250):
         batch_ids = ids[ndx:min(ndx + batch_size, len(ids))]
         batch_input = [test_data[sample_id]['representation'][embed_type]['vec'] for sample_id in batch_ids]
         yield batch_ids, np.stack(batch_input)
+
+
+def generate_batches_train_for_combine(batch_size, embed_type, max_size=250):
+    """
+    :param batch_size:
+    :param embed_type:
+    :param max_size:
+    :return:
+    """
+    ids = list(train_data.keys())
+
+    print("Load all train embedding....")
+    for sample_id in ids:
+        if train_data[sample_id]['representation'][embed_type]['vec'] is not None:
+            break
+        train_data[sample_id]['representation'][embed_type]['vec'] = \
+            get_sample_representation(train_data[sample_id]['representation'][embed_type]['words'],
+                                      embed_type,
+                                      max_size)
+    print("Total: {} samples".format(len(ids)))
+
+    for ndx in range(0, len(ids), batch_size):
+        batch_ids = ids[ndx:min(ndx + batch_size, len(ids))]
+        batch_input = [train_data[sample_id]['representation'][embed_type]['vec'] for sample_id in batch_ids]
+        batch_output = np.array([train_data[sample_id]['label'] for sample_id in batch_ids])
+        yield batch_ids, np.stack(batch_input), batch_output
 
 
 def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250, ids=None):
@@ -77,6 +105,8 @@ def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250, 
         # hist = np.histogram(item_lengths)
 
     for sample_id in ids:
+        if train_data[sample_id]['representation'][embed_type]['vec'] is not None:
+            break
         train_data[sample_id]['representation'][embed_type]['vec'] = \
             get_sample_representation(train_data[sample_id]['representation'][embed_type]['words'],
                                       embed_type,
