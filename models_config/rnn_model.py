@@ -21,5 +21,5 @@ def get_model(embed_type):
                 dropout)
 
     print(model)
-    print(f'The model has {count_parameters(model):,} trainable parameters')
-    return model, f'rnn_{embed_type}.pt'
+    print('The model has {count_parameters(model):,} trainable parameters')
+    return model, 'rnn_{}.pt'.format(embed_type)

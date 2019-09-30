@@ -2,11 +2,12 @@ import pickle
 import random
 import numpy as np
 
-train_data = pickle.load(open('./data-bin/train_v1.pkl', 'rb'))
-test_data = pickle.load(open('./data-bin/test_v1.pkl', 'rb'))
-w2v_dict = pickle.load(open('./data-bin/dict_map_v1.pkl', 'rb'))
-train_sample2vec_roberta = pickle.load(open('./data-bin/train_sample2vec.pkl', 'rb'))
-test_sample2vec_roberta = pickle.load(open('./data-bin/test_sample2vec.pkl', 'rb'))
+train_data = pickle.load(open('./data-bin/v3_a1t/train_v3.pkl', 'rb'))
+valid_data = pickle.load(open('./data-bin/v3_a1t/valid_v3.pkl', 'rb'))
+test_data = pickle.load(open('./data-bin/v3_a1t/test_v3.pkl', 'rb'))
+w2v_dict = pickle.load(open('./data-bin/v3_a1t/dict_map_v3.pkl', 'rb'))
+train_sample2vec_roberta = pickle.load(open('./data-bin/v3_a1t/train_sample2vec_v3.pkl', 'rb'))
+test_sample2vec_roberta = pickle.load(open('./data-bin/v3_a1t/test_sample2vec_v3.pkl', 'rb'))
 
 
 def get_valid_data_ids(valid_ratio=0.1, shuffer=False):
@@ -28,7 +29,7 @@ def get_sample_representation(sample_id, sample_words, present_type, size):
         elif sample_id.startswith("test_"):
             embed_vector = test_sample2vec_roberta[sample_id]
         if embed_vector.shape[0] < size:
-            embed_vector = np.concatenate([embed_vector, np.zeros((size - embed_vector.shape[0], 512))], axis=0)
+            embed_vector = np.concatenate([embed_vector, np.zeros((size - embed_vector.shape[0], 128))], axis=0)
         else:
             embed_vector = embed_vector[:size]
         return embed_vector
@@ -70,34 +71,34 @@ def generate_batches_test(batch_size, embed_type, max_size=250):
         yield batch_ids, np.stack(batch_input)
 
 
-def generate_batches_train_for_combine(batch_size, embed_type, max_size=250):
+def generate_batches_for_combine(batch_size, embed_type, max_size=250):
     """
     :param batch_size:
     :param embed_type:
     :param max_size:
     :return:
     """
-    ids = list(train_data.keys())
+    ids = list(valid_data.keys())
 
-    print("Load all train embedding....")
+    print("Load all valid embedding....")
     for sample_id in ids:
-        if train_data[sample_id]['representation'][embed_type]['vec'] is not None:
+        if valid_data[sample_id]['representation'][embed_type]['vec'] is not None:
             break
-        train_data[sample_id]['representation'][embed_type]['vec'] = \
+        valid_data[sample_id]['representation'][embed_type]['vec'] = \
             get_sample_representation(sample_id,
-                                      train_data[sample_id]['representation'][embed_type]['words'],
+                                      valid_data[sample_id]['representation'][embed_type]['words'],
                                       embed_type,
                                       max_size)
     print("Total: {} samples".format(len(ids)))
 
     for ndx in range(0, len(ids), batch_size):
         batch_ids = ids[ndx:min(ndx + batch_size, len(ids))]
-        batch_input = [train_data[sample_id]['representation'][embed_type]['vec'] for sample_id in batch_ids]
-        batch_output = np.array([train_data[sample_id]['label'] for sample_id in batch_ids])
+        batch_input = [valid_data[sample_id]['representation'][embed_type]['vec'] for sample_id in batch_ids]
+        batch_output = np.array([valid_data[sample_id]['label'] for sample_id in batch_ids])
         yield batch_ids, np.stack(batch_input), batch_output
 
 
-def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250, ids=None):
+def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250):
     """
     :param batch_size:
     :param embed_type:
@@ -106,11 +107,8 @@ def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250, 
     :param ids: if set, it's valid set
     :return:
     """
-    if ids is None:
-        print("Load train embedding....")
-        ids = list(set(train_data.keys()) - set(valid_data_ids))
-    else:
-        print("Load valid embedding....")
+    print("Load train embedding....")
+    ids = list(train_data.keys())
     if shuffler:
         random.shuffle(ids)
 
@@ -133,6 +131,122 @@ def generate_batches_train(batch_size, embed_type, shuffler=True, max_size=250, 
         batch_ids = ids[ndx:min(ndx + batch_size, len(ids))]
         batch_input = [train_data[sample_id]['representation'][embed_type]['vec'] for sample_id in batch_ids]
         batch_output = np.array([train_data[sample_id]['label'] for sample_id in batch_ids])
+        # len(batch_vector)
+        yield np.stack(batch_input), batch_output
+
+
+def get_train_data(embed_type, shuffler=True, max_size=250):
+    """
+    :param batch_size:
+    :param embed_type:
+    :param shuffler:
+    :param max_size:
+    :param ids: if set, it's valid set
+    :return:
+    """
+    print("Load train embedding....")
+    ids = list(train_data.keys())
+    if shuffler:
+        random.shuffle(ids)
+
+    # get max size for batch padding (250 is cover almost train dataset and all test set)
+    if max_size is None:
+        item_lengths = [len(train_data[item_id]['representation'][embed_type]['words']) for item_id in ids]
+        max_size = max(item_lengths)
+        # hist = np.histogram(item_lengths)
+
+    input_tensor = []
+    output_tensor = []
+
+    for sample_id in ids:
+        if train_data[sample_id]['representation'][embed_type]['vec'] is not None:
+            break
+        train_data[sample_id]['representation'][embed_type]['vec'] = \
+            get_sample_representation(sample_id,
+                                      train_data[sample_id]['representation'][embed_type]['words'],
+                                      embed_type,
+                                      max_size)
+
+    for sample_id in ids:
+        input_tensor.append(train_data[sample_id]['representation'][embed_type]['vec'])
+        output_tensor.append(train_data[sample_id]['label'])
+
+    return np.stack(input_tensor), np.stack(output_tensor)
+
+
+def get_valid_data(embed_type, shuffler=True, max_size=250):
+    """
+    :param batch_size:
+    :param embed_type:
+    :param shuffler:
+    :param max_size:
+    :param ids: if set, it's valid set
+    :return:
+    """
+    print("Load valid embedding....")
+    # ids = list(valid_data.keys())[:100] # for debug
+    ids = list(valid_data.keys())
+    if shuffler:
+        random.shuffle(ids)
+
+    # get max size for batch padding (250 is cover almost train dataset and all test set)
+    if max_size is None:
+        item_lengths = [len(valid_data[item_id]['representation'][embed_type]['words']) for item_id in ids]
+        max_size = max(item_lengths)
+        # hist = np.histogram(item_lengths)
+
+    input_tensor = []
+    output_tensor = []
+
+    for sample_id in ids:
+        if valid_data[sample_id]['representation'][embed_type]['vec'] is not None:
+            break
+        valid_data[sample_id]['representation'][embed_type]['vec'] = \
+            get_sample_representation(sample_id,
+                                      valid_data[sample_id]['representation'][embed_type]['words'],
+                                      embed_type,
+                                      max_size)
+
+    for sample_id in ids:
+        input_tensor.append(valid_data[sample_id]['representation'][embed_type]['vec'])
+        output_tensor.append(valid_data[sample_id]['label'])
+
+    return np.stack(input_tensor), np.stack(output_tensor)
+
+
+def generate_batches_valid(batch_size, embed_type, shuffler=True, max_size=250):
+    """
+    :param batch_size:
+    :param embed_type:
+    :param shuffler:
+    :param max_size:
+    :param ids: if set, it's valid set
+    :return:
+    """
+    print("Load valid embedding....")
+    ids = list(valid_data.keys())
+    if shuffler:
+        random.shuffle(ids)
+
+    # get max size for batch padding (250 is cover almost train dataset and all test set)
+    if max_size is None:
+        item_lengths = [len(valid_data[item_id]['representation'][embed_type]['words']) for item_id in ids]
+        max_size = max(item_lengths)
+        # hist = np.histogram(item_lengths)
+
+    for sample_id in ids:
+        if valid_data[sample_id]['representation'][embed_type]['vec'] is not None:
+            break
+        valid_data[sample_id]['representation'][embed_type]['vec'] = \
+            get_sample_representation(sample_id,
+                                      valid_data[sample_id]['representation'][embed_type]['words'],
+                                      embed_type,
+                                      max_size)
+    print("Total: {} samples".format(len(ids)))
+    for ndx in range(0, len(ids), batch_size):
+        batch_ids = ids[ndx:min(ndx + batch_size, len(ids))]
+        batch_input = [valid_data[sample_id]['representation'][embed_type]['vec'] for sample_id in batch_ids]
+        batch_output = np.array([valid_data[sample_id]['label'] for sample_id in batch_ids])
         # len(batch_vector)
         yield np.stack(batch_input), batch_output
 

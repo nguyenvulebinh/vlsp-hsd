@@ -11,12 +11,12 @@ import torch.nn as nn
 import time
 
 combine_folder = "./submit-combine"
-N_EPOCHS = 30
+N_EPOCHS = 15
 BATCH_SIZE = 128
 
 
 class Net(nn.Module):
-    def __init__(self, input_shape=30, num_class=3, drop=0.3):
+    def __init__(self, input_shape=30, num_class=3, drop=0.5):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_shape, 128)
         self.fc2 = nn.Linear(128, num_class)
@@ -166,7 +166,7 @@ def do_train(model_instance, train_features, train_label, test_features):
 if __name__ == "__main__":
     files_train = []
     files_test = []
-    for filename in Path(combine_folder).glob('**/*.prob.json'):
+    for filename in Path(combine_folder).glob('*.prob.json'):
         if '_test.' in str(filename):
             files_test.append(str(filename))
         else:
@@ -175,5 +175,5 @@ if __name__ == "__main__":
 
     train_features_load, train_label_load = load_train(files_train)
     test_features_load = load_test(files_test)
-    model_instance = Net()
+    model_instance = Net(input_shape=train_features_load[list(train_features_load.keys())[0]].shape[0])
     do_train(model_instance, train_features_load, train_label_load, test_features_load)

@@ -7,7 +7,7 @@ def get_model(embed_type):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     EMBEDDING_DIM = utils.get_embedding_dim(embed_type)
-    N_FILTERS = 1024
+    N_FILTERS = 512
     FILTER_SIZES = [3, 4, 5, 6]
     OUTPUT_DIM = 3
     DROPOUT = 0.5
@@ -16,5 +16,5 @@ def get_model(embed_type):
 
     print(model)
 
-    print(f'The model has {count_parameters(model):,} trainable parameters')
-    return model, f'cnn_{embed_type}.pt'
+    print('The model has {count_parameters(model):,} trainable parameters')
+    return model, 'cnn_{}.pt'.format(embed_type)

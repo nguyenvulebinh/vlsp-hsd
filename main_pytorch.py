@@ -129,8 +129,7 @@ def do_train_model(type_embed, model_instance, model_name):
     for epoch in range(N_EPOCHS):
         start_time = time.time()
         epoch_iterator = load_dataset.generate_batches_train(BATCH_SIZE, type_embed)
-        epoch_iterator_valid = load_dataset.generate_batches_train(BATCH_SIZE, type_embed,
-                                                                   ids=load_dataset.valid_data_ids,
+        epoch_iterator_valid = load_dataset.generate_batches_valid(BATCH_SIZE, type_embed,
                                                                    shuffler=False)
         train_loss, train_acc, train_f1 = train_epoch(model_instance, epoch_iterator, optimizer, criterion, device,
                                                       file_log=file_log)
@@ -164,7 +163,7 @@ def do_train_model(type_embed, model_instance, model_name):
     utils.export_result_submit(results_test, f'./submit/submit_{model_name}.csv', './data-bin/05_sample_submission.csv')
 
     # Export probs for sample in train data
-    train_iterator_for_combine = load_dataset.generate_batches_train_for_combine(BATCH_SIZE, type_embed)
+    train_iterator_for_combine = load_dataset.generate_batches_for_combine(BATCH_SIZE, type_embed)
     results_probs = evaluate_epoch_export_prob(model_instance, train_iterator_for_combine, device)
     utils.export_result_combine(results_probs, f'./submit-combine/{model_name}.prob.json')
 
@@ -172,12 +171,12 @@ def do_train_model(type_embed, model_instance, model_name):
 
 
 if __name__ == "__main__":
-    # list_embeds = ['comment', 'fasttext', 'sonvx_wiki', 'sonvx_baomoi_5', 'sonvx_baomoi_2']
-    list_embeds = ['roberta']
+    # list_embeds = ['comment', 'comment_bpe', 'fasttext', 'sonvx_wiki', 'sonvx_baomoi_5', 'sonvx_baomoi_2']
+    list_embeds = ['fasttext']
     for embed_item in list_embeds:
         list_models = [
             (cnn_model.get_model(embed_item)),
-            (rnn_model.get_model(embed_item)),
+            # (rnn_model.get_model(embed_item)),
         ]
         for model_item in list_models:
             do_train_model(embed_item, *model_item)

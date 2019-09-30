@@ -11,7 +11,7 @@ def export_result_submit(result_json, file_out, file_template):
             for line in lines:
                 if line.startswith('test_'):
                     key, value = line.split(',')
-                    file_out.write("\n{},{}".format(key, result_json[key]))
+                    file_out.write("{},{}\n".format(key, result_json[key]))
                 elif len(line.strip()) > 0:
                     file_out.write(line + "\n")
 
@@ -49,11 +49,12 @@ def get_hate_class_f1(f1_value):
 def get_embedding_dim(embed_type):
     return {
         'comment': 200,
+        'comment_bpe': 200,
         'fasttext': 300,
         'sonvx_wiki': 400,
         'sonvx_baomoi_5': 400,
         'sonvx_baomoi_2': 300,
-        'roberta': 512,
+        'roberta': 128,
 
     }[embed_type]
 
